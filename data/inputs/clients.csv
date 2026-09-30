@@ -1,0 +1,5 @@
+CLIENT_ID,CLIENT_NAME,COUNTRY,CREATION_DATE,IS_ACTIVE
+1,Jean Dupont,FR,2025-01-15,true
+2,Alice Martin,FR,2025-02-20,true
+3,Robert Smith,GB,2025-03-10,false
+4,Maria Garcia,ES,2025-04-05,true
