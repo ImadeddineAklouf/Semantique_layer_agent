@@ -35,3 +35,7 @@ logs/
 
 # Rapport:
 reports/
+
+# API Key
+
+app/.env
