@@ -1,4 +1,4 @@
-from app.agents import metadata_agent
+from app.agents import documentation_agent, metadata_agent, consistency_agent
 
 
-root_agent = metadata_agent
+root_agent = consistency_agent
