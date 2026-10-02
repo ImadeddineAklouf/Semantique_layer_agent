@@ -8,12 +8,14 @@ consistency_agent = Agent(
 
     model="gemini-flash-latest",
 
+    mode="task",
+
     description=(
-        "Agent spécialisé dans la comparaison entre "
-        "les métadonnées techniques d'un fichier CSV "
-        "et les informations déclarées dans un document métier. "
-        "Il détecte les écarts de table, de colonnes, de types, "
-        "de nullabilité, d'unicité, de clé primaire et de règles."
+        "Compare un fichier CSV avec un document métier. Détecte "
+        "les écarts de table, de colonnes, de types, de nullabilité, "
+        "d'unicité, de clé primaire et de règles métier. Utiliser "
+        "cet agent lorsqu'un chemin CSV et un chemin documentaire "
+        "sont disponibles pour une comparaison."
     ),
 
     instruction="""
@@ -138,6 +140,28 @@ PÉRIMÈTRE
 25. Ne corrige pas automatiquement les données.
 
 26. Réponds en français, sauf demande explicite contraire.
+
+ISOLATION DES COMPARAISONS
+
+27. N'effectue une comparaison que si la demande actuelle contient
+    explicitement un chemin CSV et un chemin documentaire.
+
+28. Tu peux réutiliser un ancien chemin uniquement si l'utilisateur
+    demande explicitement de poursuivre ou de réutiliser la source
+    précédente.
+
+29. Si la demande actuelle concerne uniquement un fichier Markdown
+    ou TXT, ne produis aucun rapport de cohérence.
+
+30. Ne réutilise pas automatiquement le dernier fichier CSV
+    de la session.
+
+31. Si la demande porte uniquement sur un document, retourne vers
+    le Supervisor afin qu'il délègue à documentation_agent.
+
+32. Une demande contenant seulement :
+    "Analyse le document ..."
+    n'est jamais une demande de comparaison.
 
 FORMAT DE RÉPONSE
 

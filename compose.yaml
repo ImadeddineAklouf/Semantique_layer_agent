@@ -1,0 +1,39 @@
+services:
+  semantic-layer-builder-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: semantic-layer-builder-api
+
+    environment:
+      APP_NAME: semantic-layer-builder
+      APP_VERSION: 0.1.0
+      APP_ENV: docker
+      AGENT_MODEL: gemini-flash-latest
+      LOG_LEVEL: INFO
+      LOG_FILE_NAME: semantic_layer_builder.log
+
+    ports:
+      - "8001:8001"
+
+    volumes:
+      - ./data/inputs:/app/data/inputs:ro
+      - ./data/documentation:/app/data/documentation:ro
+      - ./data/outputs:/app/data/outputs
+      - ./logs:/app/logs
+
+    restart: unless-stopped
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=3)"
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3

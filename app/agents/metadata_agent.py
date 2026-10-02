@@ -8,8 +8,14 @@ metadata_agent = Agent(
 
     model="gemini-flash-latest",
 
+    mode="task",
+
     description=(
-        "Agent spécialisé dans l'analyse technique et sémantique des métadonnées provenant de fichiers CSV."
+        "Analyse uniquement un fichier CSV. Extrait les métadonnées "
+        "techniques, les types, la qualité des données, les valeurs "
+        "nulles et les clés primaires candidates. Utiliser cet agent "
+        "lorsque la demande porte sur un CSV sans comparaison avec "
+        "une documentation métier."
     ),
 
     instruction="""

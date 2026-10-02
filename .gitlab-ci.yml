@@ -1,0 +1,101 @@
+stages:
+  - validate
+  - test
+  - build
+
+
+variables:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_NO_CACHE_DIR: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONUNBUFFERED: "1"
+
+
+default:
+  interruptible: true
+
+
+python-validation:
+  stage: validate
+
+  image: python:3.13-slim
+
+  before_script:
+    - python --version
+    - python -m pip install --upgrade pip
+    - python -m pip install -r requirements.txt
+
+  script:
+    - python -m compileall app tests
+
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+
+pytest:
+  stage: test
+
+  image: python:3.13-slim
+
+  before_script:
+    - python --version
+    - python -m pip install --upgrade pip
+    - python -m pip install -r requirements.txt
+
+  script:
+    - python -m pytest -v --junitxml=pytest-report.xml
+
+  artifacts:
+    when: always
+    expire_in: 7 days
+
+    reports:
+      junit: pytest-report.xml
+
+    paths:
+      - pytest-report.xml
+      - logs/
+
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+
+docker-files-validation:
+  stage: validate
+
+  image: python:3.13-slim
+
+  before_script:
+    - python --version
+    - python -m pip install --upgrade pip
+    - python -m pip install pytest
+
+  script:
+    - python -m pytest tests/test_docker_files.py -v
+
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+
+docker-build:
+  stage: build
+
+  image: docker:latest
+
+  services:
+    - name: docker:dind
+      alias: docker
+
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+
+  before_script:
+    - docker version
+
+  script:
+    - docker build --tag semantic-layer-builder:$CI_COMMIT_SHORT_SHA .
+    - docker image inspect semantic-layer-builder:$CI_COMMIT_SHORT_SHA
+
+  rules:
+    - if: $CI_COMMIT_BRANCH

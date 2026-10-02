@@ -1,0 +1,44 @@
+# Git
+.git
+.gitignore
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+
+# Python environments
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+
+# Coverage
+.coverage
+htmlcov
+coverage.xml
+
+# Logs
+logs
+*.log
+
+# Generated outputs
+data/outputs
+
+# IDE
+.vscode
+.idea
+
+# Operating system
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+
+# Documentation backups
+README.previous.md

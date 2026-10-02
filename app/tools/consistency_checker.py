@@ -156,11 +156,24 @@ def compare_column(
     row_count: int,
 ) -> ColumnConsistencyResult:
     """
-    Compare une colonne technique et sa définition métier.
+    Compare une colonne technique avec sa définition métier.
+
+    La comparaison porte sur :
+    - le type sémantique ;
+    - la nullabilité ;
+    - l'unicité.
+
+    Une colonne documentée comme non unique autorise les doublons,
+    mais ne nécessite pas obligatoirement leur présence dans
+    l'échantillon analysé.
     """
 
     issues: list[str] = []
     recommendations: list[str] = []
+
+    # ---------------------------------------------------------
+    # 1. Comparaison du type
+    # ---------------------------------------------------------
 
     normalized_documented_type = (
         normalize_documented_type(
@@ -197,60 +210,90 @@ def compare_column(
             "ou corriger la documentation métier."
         )
 
+    # ---------------------------------------------------------
+    # 2. Comparaison de la nullabilité
+    # ---------------------------------------------------------
+
     if documented_column.required is None:
         nullability_status = "not_verifiable"
 
-    elif (
-        documented_column.required is True
-        and technical_column.nullable is False
-    ):
-        nullability_status = "consistent"
+    elif documented_column.required is True:
+        if technical_column.nullable is False:
+            nullability_status = "consistent"
 
-    elif (
-        documented_column.required is True
-        and technical_column.nullable is True
-    ):
-        nullability_status = "inconsistent"
+        else:
+            nullability_status = "inconsistent"
 
-        issues.append(
-            "La colonne est documentée comme obligatoire "
-            "mais contient au moins une valeur nulle."
-        )
+            issues.append(
+                "La colonne est documentée comme obligatoire, "
+                "mais elle contient au moins une valeur nulle."
+            )
 
-        recommendations.append(
-            "Corriger les valeurs nulles ou modifier "
-            "la règle documentaire."
-        )
+            recommendations.append(
+                "Corriger les valeurs nulles ou modifier "
+                "la règle documentaire."
+            )
 
     else:
+        # Si la colonne n'est pas obligatoire, elle peut contenir
+        # ou ne pas contenir de valeurs nulles.
         nullability_status = "consistent"
+
+    # ---------------------------------------------------------
+    # 3. Calcul de l'unicité technique observée
+    # ---------------------------------------------------------
 
     technical_unique = (
         technical_column.null_count == 0
         and technical_column.unique_count == row_count
     )
 
+    # ---------------------------------------------------------
+    # 4. Comparaison de l'unicité
+    # ---------------------------------------------------------
+
     if documented_column.unique is None:
         uniqueness_status = "not_verifiable"
 
-    elif (
-        documented_column.unique
-        == technical_unique
-    ):
-        uniqueness_status = "consistent"
+    elif documented_column.unique is True:
+        # La documentation impose une véritable contrainte
+        # d'unicité. Les données doivent donc être uniques
+        # et ne contenir aucune valeur nulle.
+        if technical_unique:
+            uniqueness_status = "consistent"
+
+        else:
+            uniqueness_status = "inconsistent"
+
+            issues.append(
+                "La colonne est documentée comme unique, "
+                "mais les données contiennent des doublons "
+                "ou des valeurs nulles."
+            )
+
+            recommendations.append(
+                "Corriger les doublons ou vérifier la règle "
+                "d'unicité dans la documentation."
+            )
 
     else:
-        uniqueness_status = "inconsistent"
+        # unique=False signifie que les doublons sont autorisés.
+        # Cela ne signifie pas que l'échantillon doit forcément
+        # contenir des doublons.
+        uniqueness_status = "consistent"
 
-        issues.append(
-            "L'unicité observée dans les données "
-            "ne correspond pas à l'unicité documentée."
-        )
+        if technical_unique:
+            recommendations.append(
+                "La colonne contient uniquement des valeurs "
+                "distinctes dans l'échantillon actuel, mais elle "
+                "n'est pas documentée comme possédant une "
+                "contrainte d'unicité. Ne pas déduire une unicité "
+                "métier à partir de cet échantillon."
+            )
 
-        recommendations.append(
-            "Vérifier les doublons ou corriger "
-            "la propriété d'unicité documentée."
-        )
+    # ---------------------------------------------------------
+    # 5. Calcul du statut global
+    # ---------------------------------------------------------
 
     statuses = {
         type_status,
@@ -268,7 +311,13 @@ def compare_column(
         overall_status = "consistent"
 
     else:
+        # Au moins une propriété est non vérifiable,
+        # mais aucune incohérence n'a été détectée.
         overall_status = "warning"
+
+    # ---------------------------------------------------------
+    # 6. Construction du résultat Pydantic
+    # ---------------------------------------------------------
 
     return ColumnConsistencyResult(
         column_name=technical_column.name,
@@ -289,7 +338,9 @@ def compare_column(
         uniqueness_status=uniqueness_status,
         overall_status=overall_status,
         issues=issues,
-        recommendations=recommendations,
+        recommendations=list(
+            dict.fromkeys(recommendations)
+        ),
     )
 
 def create_undocumented_column_result(

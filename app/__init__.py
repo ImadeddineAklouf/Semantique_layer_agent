@@ -1,5 +1,3 @@
-from app import agent
-
-__all__ = [
-    "agent",
-]
+"""
+Semantic Layer Builder application package.
+"""

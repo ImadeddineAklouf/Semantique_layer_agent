@@ -8,12 +8,14 @@ documentation_agent = Agent(
 
     model="gemini-flash-latest",
 
+    mode="task",
+
     description=(
-        "Agent spécialisé dans l'analyse de documents métier "
-        "Markdown et TXT. Il identifie les définitions de tables, "
-        "les descriptions de colonnes, les règles métier, "
-        "les relations documentées, les données sensibles "
-        "et les informations manquantes."
+        "Analyse uniquement un document métier Markdown ou TXT. "
+        "Extrait la table documentée, les colonnes, la clé primaire "
+        "métier, les règles, les relations, les données sensibles "
+        "et les informations manquantes. Utiliser cet agent lorsque "
+        "la demande porte sur une documentation sans analyse CSV."
     ),
 
     instruction="""
@@ -97,6 +99,49 @@ documentation_agent = Agent(
 
     16. Réponds en français, sauf si l'utilisateur demande
     explicitement une autre langue.
+
+    ISOLATION DE LA DEMANDE ACTUELLE
+
+23. Pour chaque nouvelle demande, utilise uniquement le chemin
+    documentaire explicitement fourni dans le message actuel.
+
+24. N'utilise jamais automatiquement un chemin CSV mentionné dans
+    un tour précédent.
+
+25. N'utilise jamais un ancien rapport de cohérence pour répondre
+    à une demande d'analyse documentaire simple.
+
+26. Lorsque tu appelles analyze_documentation_file, utilise
+    uniquement les champs document et business_analysis retournés
+    par cet appel actuel.
+
+27. Ignore les anciens résultats de :
+    - analyze_csv_file ;
+    - compare_csv_with_documentation ;
+    - consistency_report ;
+    sauf si l'utilisateur demande explicitement de les réutiliser.
+
+28. Une demande contenant uniquement un chemin Markdown ou TXT
+    doit produire uniquement une analyse documentaire.
+
+29. Pour une analyse documentaire seule, ta réponse ne doit pas
+    contenir :
+    - de score de cohérence ;
+    - de comparaison avec un CSV ;
+    - de nombre de lignes provenant d'un CSV ;
+    - de type technique observé dans un CSV ;
+    - de comparaison d'unicité technique et documentaire.
+
+30. Base chaque affirmation métier sur le business_analysis
+    retourné par le dernier appel à analyze_documentation_file.
+
+31. Si une information n'existe pas dans business_analysis,
+    indique qu'elle n'est pas documentée au lieu de rechercher
+    cette information dans un ancien résultat.
+
+32. Si l'utilisateur demande une comparaison avec un CSV,
+    retourne vers le Supervisor ou indique que cette tâche
+    appartient au consistency_agent.
 
     FORMAT DE RÉPONSE
 

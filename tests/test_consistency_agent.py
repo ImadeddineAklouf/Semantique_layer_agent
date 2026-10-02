@@ -7,8 +7,17 @@ def test_consistency_agent_has_expected_name() -> None:
     )
 
 
-def test_consistency_agent_has_one_tool() -> None:
-    assert len(consistency_agent.tools) == 1
+def test_consistency_agent_has_expected_business_tool() -> None:
+    tool_names = {
+        getattr(tool, "name", None)
+        or getattr(tool, "__name__", None)
+        for tool in consistency_agent.tools
+    }
+
+    assert (
+        "compare_csv_with_documentation"
+        in tool_names
+    )
 
 
 def test_consistency_agent_uses_expected_model() -> None:
